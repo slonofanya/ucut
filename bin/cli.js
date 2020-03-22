@@ -10,7 +10,7 @@ const [ hash, ...timeArgs ] = _
 console.log({ hash, timeArgs })
 
 const videoFilePath = `./out/${hash}`;
-const target = `/mnt/c/mp3/${hash}`;
+const target = `../out/${hash}`;
 
 const toSec = time => {
   if (!time) return 0;

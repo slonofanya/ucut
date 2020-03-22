@@ -2,7 +2,7 @@ import fs from 'fs'
 import _ from 'lodash'
 import Mp3Cutter from 'mp3-cutter'
 
-const dir = '/mnt/c/mp3'
+const dir = '../out'
 
 const toSec = time => {
   if (!time) return 0;
@@ -14,8 +14,8 @@ const toSec = time => {
 export default ({ src, hash, timeCodes }) => {
   const target = `${dir}/${hash}`
 
-  if (!fs.existsSync(target)){
-    fs.mkdirSync(target, 777);
+  if (!fs.existsSync(target)) {
+    fs.mkdirSync(target, 0o777)
   }
 
   return _(timeCodes)
