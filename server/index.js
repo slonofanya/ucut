@@ -1,3 +1,4 @@
+import _ from 'lodash'
 import express from 'express'
 import cors from 'cors'
 
@@ -8,26 +9,25 @@ import { youtubeParse } from './lib/utils.js';
 const app = express()
 app.use(cors())
 const port = 3001
+const dir = '/mnt/c/mp3'
+app.use(express.static(dir))
 
 app.get('/', async (req, res) => {
-  const { url, start, end } = req.query
+  const url = JSON.parse(req.query.url)
+  const timeCodes = JSON.parse(req.query.timeCodes)
   const hash = youtubeParse(url);
-  const videoFilePath = `./out/${hash}`;
+  const videoFilePath = `${dir}/${hash}`;
 
-  const downloaded = await downloader(hash, {
+  const src = await downloader(hash, {
     videoFilePath,
-    onProgress: progress => {
-      console.log('====================================================================================================');
-      console.log(progress)
+    onProgress: (progress) => {
+      res.write(JSON.stringify(progress))
     }
   });
 
-  const cutted = await cutter({
-    src: videoFilePath,
-    timeCodes: [start, end]
-  })
+  const cuts = cutter({ src, timeCodes, hash })
 
-  res.send({ url, start, end })
+  res.end(JSON.stringify({ cuts }))
 })
 
 app.listen(port, () => console.log(`Example app listening on port ${port}!`))

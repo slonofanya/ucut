@@ -2,9 +2,12 @@ import _ from 'lodash';
 import React, { useState } from 'react';
 import './App.css';
 
-const url = 'https://www.youtube.com/watch?v=3EP-duJ9vsI';
-const start = '9:44'
-const end = '15:32'
+// const defaultUrl = 'https://www.youtube.com/watch?v=3EP-duJ9vsI';
+const defaultUrl = 'https://www.youtube.com/watch?v=1QewPifmFxI';
+const defaultTimeCodes = [{
+  start: '0:0',
+  end: '0:15'
+}]
 
 const {
   protocol,
@@ -12,29 +15,49 @@ const {
 } = document.location
 const baseUrl = `${protocol}//${hostname}:3001`
 
-const onClick = async (params) => {
+const onClick = async (params, { onProgress }) => {
   var url = new URL('/', baseUrl)
 
-  console.log({ params, url });
   _.forEach(params, (value, key) =>
-    url.searchParams.append(key, value)
+    url.searchParams.append(key, JSON.stringify(value))
   )
 
-  const data = await fetch(url).then(data => data.json())
-  console.log({ data });
+  const { body } = await fetch(url)
+  const reader = body.getReader()
+
+  new ReadableStream({
+    start(controller) {
+      return pump();
+      function pump() {
+        return reader.read().then(({ done, value }) => {
+          var string = new TextDecoder('utf-8').decode(value)
+
+          if (done) return
+
+          onProgress(JSON.parse(string))
+          return pump();
+        });
+      }
+    }
+  })
 }
 
 export default () => {
-  const [params, setParams] = useState({
-    url,
-    start,
-    end
-  });
-  const onChange = key => e => {
-    setParams({
-      ...params,
-      [key]: e.target.value
-    })
+  const [cuts, setCuts] = useState([])
+  const [percentage, setPersetage] = useState(0)
+  const [timeCodes, setTimeCodes] = useState(defaultTimeCodes)
+  const [url, setUrl] = useState(defaultUrl);
+
+  const onChangeTime = (i, key) => e => {
+    const newTimecodes = [ ...timeCodes ]
+    _.set(newTimecodes, `${i}.${key}`, e.target.value)
+    setTimeCodes(newTimecodes)
+  }
+
+  const onProgress = progressData => {
+    const { progress = {} } = progressData;
+    setPersetage(progress.percentage || 0)
+    setCuts(progressData.cuts)
   }
 
   return (
@@ -44,28 +67,54 @@ export default () => {
       <div>
         Url:
         <input
-          onChange={ onChange('url') }
-          value={ params.url }
+          onChange={ e => setUrl(e.target.value) }
+          value={ url }
         />
       </div>
 
-      <div>
-        Start:
-        <input
-          onChange={ onChange('start') }
-          value={ params.start }
-        />
-      </div>
+      { _.map(timeCodes, ({ start, end }, i) => (
+        <div key={ i }>
+          <div>
+            Start:
+            <input
+              onChange={ onChangeTime(i, 'start') }
+              value={ start }
+            />
+          </div>
 
-      <div>
-        End:
-        <input
-          onChange={ onChange('end') }
-          value={ params.end }
-        />
-      </div>
+          <div>
+            End:
+            <input
+              onChange={ onChangeTime(i, 'end') }
+              value={ end }
+            />
+          </div>
+        </div>
+      )) }
+      <button onClick={ () => setTimeCodes([ ...timeCodes, {} ]) }>Add</button>
 
-      <button onClick={ () => onClick(params) }>Go</button>
+      <button onClick={ () => {
+        setPersetage(0)
+        onClick({ url, timeCodes }, { onProgress })
+      } }>Go</button>
+
+      <hr />
+
+      <div
+        className='progress'
+        style={ { width: `${percentage}%` } }
+      />
+
+      { _.map(cuts, cut => (
+        <a
+          key={ cut }
+          className='cuts'
+          href={ `${baseUrl}/${cut}` }
+          target='noopener noreferrer'
+        >
+          { cut }
+        </a>
+      )) }
     </div>
   );
 }

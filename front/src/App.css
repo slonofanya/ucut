@@ -2,3 +2,9 @@
   text-align: center;
 }
 
+.progress {
+  border: 1 solid blue;
+  background: red;
+  height: 50px;
+}
+

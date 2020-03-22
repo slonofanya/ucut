@@ -1,20 +1,44 @@
+import fs from 'fs'
+import _ from 'lodash'
 import Mp3Cutter from 'mp3-cutter'
+
+const dir = '/mnt/c/mp3'
 
 const toSec = time => {
   if (!time) return 0;
+
   const a = time.split(':')
   return (+a[0]) * 60 + (+a[1])
 }
 
-export default ({ src, timeCodes }) =>
-  timeCodes.map((time, i) => {
-    const start = toSec(time)
-    const end = toSec(timeCodes[i+1])
+export default ({ src, hash, timeCodes }) => {
+  const target = `${dir}/${hash}`
 
-    return start && end && Mp3Cutter.cut({
-      src,
-      target: `${src}${start}-${end}.mp3`,
-      start,
-      end
+  if (!fs.existsSync(target)){
+    fs.mkdirSync(target, 777);
+  }
+
+  return _(timeCodes)
+    .map((time, i) => {
+      const start = toSec(time.start)
+      const end = toSec(time.end)
+
+      if (!end) {
+        return
+      }
+
+      const fileName = `${start}-${end}.mp3`;
+      const targetFilePath = `${target}/${fileName}`;
+
+      Mp3Cutter.cut({
+        src,
+        target: targetFilePath,
+        start,
+        end: end || 9999
+      })
+
+      return `${hash}/${fileName}`
     })
-  })
+    .compact()
+    .value()
+}
