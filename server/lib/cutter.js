@@ -27,7 +27,7 @@ export default ({ src, hash, timeCodes }) => {
         return
       }
 
-      const fileName = `${start}-${end}.mp3`;
+      const fileName = `${time.name || `${start}-${end}`}.mp3`;
       const targetFilePath = `${target}/${fileName}`;
 
       Mp3Cutter.cut({

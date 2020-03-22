@@ -72,7 +72,7 @@ export default () => {
         />
       </div>
 
-      { _.map(timeCodes, ({ start, end }, i) => (
+      { _.map(timeCodes, ({ start, end, name }, i) => (
         <div key={ i }>
           <div>
             Start:
@@ -87,6 +87,14 @@ export default () => {
             <input
               onChange={ onChangeTime(i, 'end') }
               value={ end }
+            />
+          </div>
+
+          <div>
+            Name:
+            <input
+              onChange={ onChangeTime(i, 'name') }
+              value={ name }
             />
           </div>
         </div>
